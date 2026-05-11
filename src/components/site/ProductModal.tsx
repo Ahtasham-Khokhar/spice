@@ -120,6 +120,7 @@ export function ProductModal({ product, onClose }: Props) {
                             else
                               setMulti((m) => {
                                 const next = new Set(m[group.id]);
+                                // eslint-disable-next-line @typescript-eslint/no-unused-expressions
                                 next.has(opt.id) ? next.delete(opt.id) : next.add(opt.id);
                                 return { ...m, [group.id]: next };
                               });

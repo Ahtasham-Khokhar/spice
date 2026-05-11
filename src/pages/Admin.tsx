@@ -1,9 +1,8 @@
 import { useMemo, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  DollarSign, Package, Trophy, Activity,
-  Plus, Pencil, Trash2, Save, X, ImageIcon,
+import {Package, Trophy, Activity,
+  Plus, Pencil, Trash2, Save, X, ImageIcon,LucideProps
 } from "lucide-react";
 import { AdminHeader } from "@/components/admin/AdminHeader";
 import { Button } from "@/components/ui/button";
@@ -16,8 +15,23 @@ import { useAuth } from "@/stores/auth";
 import { useOrders, ORDER_STATUSES, type OrderStatus } from "@/stores/orders";
 import { useStock } from "@/stores/stock";
 import { useMenuStore, type MenuProduct } from "@/stores/menuStore";
+import { categories } from "@/data/menu";
 import { formatMoney, formatTime } from "@/lib/format";
 import { toast } from "sonner";
+
+function PkrIcon({ className, size = 16 }: LucideProps) {
+  return (
+    <span
+      className={className}
+      style={{
+        fontSize: size,
+        lineHeight: 1,
+      }}
+    >
+      ₨
+    </span>
+  );
+}
 
 const STATUS_COLORS: Record<OrderStatus, string> = {
   Received: "bg-amber-500/15 text-amber-400 border-amber-500/25",
@@ -45,7 +59,7 @@ const emptyProduct = (): EditableProduct => ({
 });
 
 const Admin = () => {
-  const { isAdmin, loading: authLoading } = useAuth();
+  const { isAdmin, loading: authLoading, adminChecked } = useAuth();
   const orders = useOrders((s) => s.orders);
   const setStatus = useOrders((s) => s.setStatus);
   const stockMap = useStock((s) => s.outOfStock);
@@ -76,11 +90,11 @@ const Admin = () => {
     };
   }, [orders]);
 
-  if (authLoading) return null;
+  if (authLoading || !adminChecked) return null;
   if (!isAdmin) return <Navigate to="/admin/login" replace />;
 
   const statCards = [
-    { icon: DollarSign, label: "Total Revenue", value: formatMoney(stats.revenue), color: "text-accent" },
+    { icon: PkrIcon, label: "Total Revenue", value: formatMoney(stats.revenue), color: "text-accent" },
     { icon: Package, label: "Total Orders", value: stats.ordersCount.toString(), color: "text-blue-400" },
     { icon: Activity, label: "Active Now", value: stats.active.toString(), color: "text-amber-400" },
     { icon: Trophy, label: "Top Seller", value: stats.topItem?.name ?? "—", sub: stats.topItem ? `${stats.topItem.qty} sold` : "No orders yet", color: "text-primary" },
@@ -305,7 +319,7 @@ const Admin = () => {
                           />
                         </div>
                         <div className="space-y-2">
-                          <Label>Price ($)</Label>
+                          <Label>Price (Rs)</Label>
                           <Input
                             type="number"
                             step="0.01"
@@ -313,7 +327,7 @@ const Admin = () => {
                             onChange={(e) =>
                               setEditing({ ...editing, price: e.target.value })
                             }
-                            placeholder="12.99"
+                            placeholder="100"
                           />
                         </div>
                       </div>
@@ -343,10 +357,10 @@ const Admin = () => {
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                              {["Burgers", "Pizza", "Sides", "Drinks"].map(
+                              {categories.map(
                                 (c) => (
-                                  <SelectItem key={c} value={c}>
-                                    {c}
+                                  <SelectItem key={c.name} value={c.name}>
+                                    {c.name}
                                   </SelectItem>
                                 )
                               )}

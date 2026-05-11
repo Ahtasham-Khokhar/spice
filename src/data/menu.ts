@@ -1,13 +1,18 @@
-import burger from "@/assets/cat-burgers.jpg";
-import pizza from "@/assets/cat-pizza.jpg";
-import sides from "@/assets/cat-sides.jpg";
-import drinks from "@/assets/cat-drinks.jpg";
-import chicken from "@/assets/p-chicken.jpg";
+import burger from "@/assets/cat-burger.jpg";
+import pizza from "@/assets/cat-pizza.webp";
+import pasta from "@/assets/cat-pasta.avif";
+import wrap from "@/assets/cat-wrap.jpg";
+import chicken from "@/assets/cat-chicken.jpg";
+import wings from "@/assets/cat-wings.jpg"
+import fries from "@/assets/cat-fries.jpg";
+import drink from "@/assets/cat-drink.jpeg"
+import icecream from "@/assets/cat-icecream.jpeg";
+
 import rings from "@/assets/p-rings.jpg";
 import shake from "@/assets/p-shake.jpg";
 import hero from "@/assets/hero-burger.jpg";
 
-export type Category = "Burgers" | "Pizza" | "Sides" | "Drinks";
+export type Category = string;
 
 export type Modifier = {
   id: string;
@@ -36,11 +41,17 @@ export type Product = {
   modifiers?: ModifierGroup[];
 };
 
+// Burgers" | "Pizza" | "Pasta" | "Wrap" | "Chicken" | "Wings" | "Fries" | "Drinks" | "Ice Cream"
 export const categories: { name: Category; image: string; tagline: string }[] = [
   { name: "Burgers", image: burger, tagline: "Stacked & sizzling" },
   { name: "Pizza", image: pizza, tagline: "Wood-fired perfection" },
-  { name: "Sides", image: sides, tagline: "Crisp & golden" },
-  { name: "Drinks", image: drinks, tagline: "Ice-cold refresh" },
+  { name: "Pasta", image: pasta, tagline: "Creamy comfort bowls" },
+  { name: "Wraps", image: wrap, tagline: "Freshly rolled goodness" },
+  { name: "Chicken", image: chicken, tagline: "Crispy juicy bites" },
+  { name: "Wings", image: wings, tagline: "Saucy spicy cravings" },
+  { name: "Fries", image: fries, tagline: "Golden crunchy treats" },
+  { name: "Drinks", image: drink, tagline: "Sip the refreshment" },
+  { name: "Ice Cream", image: icecream, tagline: "Sweet frozen delight" },
 ];
 
 const standardMods: ModifierGroup[] = [
@@ -106,7 +117,7 @@ export const products: Product[] = [
     description: "Buttermilk-fried chicken, fiery glaze, slaw, pickles on toasted brioche.",
     price: 11.49,
     image: chicken,
-    category: "Burgers",
+    category: "Pizza",
     rating: 4.8,
     reviews: 932,
     trending: true,
@@ -118,7 +129,7 @@ export const products: Product[] = [
     description: "San Marzano tomato, fior di latte, fresh basil, 72-hour dough.",
     price: 14.5,
     image: pizza,
-    category: "Pizza",
+    category: "Pasta",
     rating: 4.9,
     reviews: 671,
     trending: true,
@@ -130,7 +141,7 @@ export const products: Product[] = [
     description: "Cup-and-char pepperoni, hot honey drizzle, smoked mozzarella.",
     price: 16.0,
     image: pizza,
-    category: "Pizza",
+    category: "Wraps",
     rating: 4.7,
     reviews: 514,
     modifiers: [standardMods[0], standardMods[1]],
@@ -140,8 +151,8 @@ export const products: Product[] = [
     name: "Truffle Parm Fries",
     description: "Hand-cut Idaho fries, white truffle oil, parmigiano, fresh herbs.",
     price: 6.5,
-    image: sides,
-    category: "Sides",
+    image: fries,
+    category: "Chicken",  
     rating: 4.8,
     reviews: 1102,
     trending: true,
@@ -153,7 +164,7 @@ export const products: Product[] = [
     description: "Thick cut, crispy beer batter, smoked aioli on the side.",
     price: 5.75,
     image: rings,
-    category: "Sides",
+    category: "Wings",
     rating: 4.6,
     reviews: 488,
     modifiers: [standardMods[0]],
@@ -163,8 +174,8 @@ export const products: Product[] = [
     name: "Midnight Cola",
     description: "Craft cola over hand-chipped ice with a twist of citrus.",
     price: 3.25,
-    image: drinks,
-    category: "Drinks",
+    image: drink,
+    category: "Fries",
     rating: 4.5,
     reviews: 312,
     modifiers: [standardMods[0]],
@@ -176,6 +187,18 @@ export const products: Product[] = [
     price: 5.5,
     image: shake,
     category: "Drinks",
+    rating: 4.9,
+    reviews: 829,
+    trending: true,
+    modifiers: [standardMods[0]],
+  },
+   {
+    id: "p9",
+    name: "Belgian Choco Shake",
+    description: "Hand-spun shake with Belgian dark chocolate and whipped cream.",
+    price: 5.5,
+    image: shake,
+    category: "Ice Cream",
     rating: 4.9,
     reviews: 829,
     trending: true,

@@ -7,6 +7,8 @@ type AuthState = {
   session: Session | null;
   isAdmin: boolean;
   loading: boolean;
+  /** True once the initial auth + role check has fully completed */
+  adminChecked: boolean;
   initialized: boolean;
   init: () => () => void;
   logout: () => Promise<void>;
@@ -17,6 +19,7 @@ export const useAuth = create<AuthState>((set, get) => ({
   session: null,
   isAdmin: false,
   loading: true,
+  adminChecked: false,
   initialized: false,
 
   init: () => {
@@ -25,28 +28,40 @@ export const useAuth = create<AuthState>((set, get) => ({
 
     const checkRole = async (userId: string | undefined) => {
       if (!userId) {
-        set({ isAdmin: false });
+        set({ isAdmin: false, adminChecked: true });
         return;
       }
-      // Defer to avoid deadlocks inside the auth callback
-      setTimeout(async () => {
+      try {
         const { data } = await supabase
           .from("user_roles")
           .select("role")
           .eq("user_id", userId)
           .eq("role", "admin")
           .maybeSingle();
-        set({ isAdmin: !!data });
-      }, 0);
+        set({ isAdmin: !!data, adminChecked: true });
+      } catch {
+        set({ isAdmin: false, adminChecked: true });
+      }
     };
 
     const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
-      set({ session, user: session?.user ?? null, loading: false });
+      set({
+        session,
+        user: session?.user ?? null,
+        loading: false,
+        // Reset adminChecked when auth changes so pages wait for re-check
+        adminChecked: !session?.user,
+      });
       checkRole(session?.user?.id);
     });
 
     supabase.auth.getSession().then(({ data: { session } }) => {
-      set({ session, user: session?.user ?? null, loading: false });
+      set({
+        session,
+        user: session?.user ?? null,
+        loading: false,
+        adminChecked: !session?.user,
+      });
       checkRole(session?.user?.id);
     });
 
@@ -55,6 +70,6 @@ export const useAuth = create<AuthState>((set, get) => ({
 
   logout: async () => {
     await supabase.auth.signOut();
-    set({ user: null, session: null, isAdmin: false });
+    set({ user: null, session: null, isAdmin: false, adminChecked: true });
   },
 }));

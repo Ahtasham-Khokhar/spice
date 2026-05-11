@@ -1,9 +1,10 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ShoppingBag, UtensilsCrossed, User, LogOut } from "lucide-react";
 import { useCart } from "@/stores/cart";
 import { useAuth } from "@/stores/auth";
 import { Button } from "@/components/ui/button";
+
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,6 +16,7 @@ import { toast } from "sonner";
 
 export function CustomerHeader() {
   const { pathname } = useLocation();
+  const navigate = useNavigate();
   const count = useCart((s) => s.count());
   const setOpen = useCart((s) => s.setOpen);
   const { user, logout } = useAuth();
@@ -27,6 +29,7 @@ export function CustomerHeader() {
   const handleLogout = async () => {
     await logout();
     toast.success("Signed out successfully");
+    navigate("/", { replace: true });
   };
 
   return (
@@ -34,9 +37,7 @@ export function CustomerHeader() {
       <div className="header-backdrop">
         <div className="container flex h-16 items-center justify-between gap-4">
           <Link to="/" className="flex items-center gap-2.5 group">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
-              <UtensilsCrossed className="h-4.5 w-4.5 text-primary-foreground" />
-            </div>
+            <img src="/favicon.png" alt="Spice Logo" className="flex h-9 w-9 items-center justify-center rounded-sm"/>
             <span className="font-display text-lg font-bold tracking-tight">
               Spice
             </span>

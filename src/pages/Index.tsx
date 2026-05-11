@@ -1,6 +1,16 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useCallback } from "react";
+import useEmblaCarousel from "embla-carousel-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronRight, Clock, ShieldCheck, Flame, MapPin, Phone, Mail } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Clock,
+  ShieldCheck,
+  Flame,
+  Phone,
+  Mail,
+  MapPin,
+} from "lucide-react";
 import { CustomerHeader } from "@/components/site/CustomerHeader";
 import { CustomerMobileNav } from "@/components/site/CustomerMobileNav";
 import { CartSidebar } from "@/components/site/CartSidebar";
@@ -14,6 +24,82 @@ import { useCart } from "@/stores/cart";
 
 type Filter = "All" | Category;
 
+export const CategoryCarousel = ({ categories, setFilter }) => {
+  // 1. Initialize Embla with loop enabled
+  const [emblaRef, emblaApi] = useEmblaCarousel({
+    loop: true,
+    align: "start",
+    slidesToScroll: 1,
+  });
+
+  // 2. Navigation Logic
+  const scrollPrev = useCallback(
+    () => emblaApi && emblaApi.scrollPrev(),
+    [emblaApi],
+  );
+  const scrollNext = useCallback(
+    () => emblaApi && emblaApi.scrollNext(),
+    [emblaApi],
+  );
+
+  return (
+    <div className="relative group">
+      {/* Navigation Buttons - Only visible on hover for a clean look */}
+      <button
+        onClick={scrollPrev}
+        className="absolute left-[-20px] top-1/2 -translate-y-1/2 z-10 bg-background/80 backdrop-blur-sm p-2 rounded-full border shadow-lg opacity-0 group-hover:opacity-100 transition-opacity hidden lg:block"
+      >
+        <ChevronLeft className="w-5 h-5" />
+      </button>
+
+      {/* The Viewport */}
+      <div
+        className="overflow-hidden cursor-grab active:cursor-grabbing"
+        ref={emblaRef}
+      >
+        <div className="flex gap-4">
+          {categories.map((c, index) => (
+            <button
+              key={`${c.name}-${index}`}
+              onClick={() => {
+                setFilter(c.name);
+                document
+                  .getElementById("menu")
+                  ?.scrollIntoView({ behavior: "smooth" });
+              }}
+              // This flex-basis ensures we see ~4 items on large screens and ~2 on mobile
+              className="flex-[0_0_70%] sm:flex-[0_0_45%] lg:flex-[0_0_24%] min-w-0 relative aspect-[4/3] overflow-hidden rounded-3xl card-surface hover:border-accent/50 transition-all active:scale-95"
+            >
+              <img
+                src={c.image}
+                alt={c.name}
+                loading="lazy"
+                className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 hover:scale-110"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+              <div className="absolute bottom-0 inset-x-0 p-5 text-left">
+                <div className="text-[10px] uppercase tracking-widest text-accent font-bold drop-shadow-md">
+                  {c.tagline}
+                </div>
+                <div className="font-display text-xl font-bold mt-0.5 text-white">
+                  {c.name}
+                </div>
+              </div>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <button
+        onClick={scrollNext}
+        className="absolute right-[-20px] top-1/2 -translate-y-1/2 z-10 bg-background/80 backdrop-blur-sm p-2 rounded-full border shadow-lg opacity-0 group-hover:opacity-100 transition-opacity hidden lg:block"
+      >
+        <ChevronRight className="w-5 h-5" />
+      </button>
+    </div>
+  );
+};
+
 const Index = () => {
   const [filter, setFilter] = useState<Filter>("All");
   const [active, setActive] = useState<Product | null>(null);
@@ -22,10 +108,16 @@ const Index = () => {
   const menuProducts = useMenuStore((s) => s.products);
 
   const filtered = useMemo(
-    () => (filter === "All" ? menuProducts : menuProducts.filter((p) => p.category === filter)),
+    () =>
+      filter === "All"
+        ? menuProducts
+        : menuProducts.filter((p) => p.category === filter),
     [filter, menuProducts],
   );
-  const trending = useMemo(() => menuProducts.filter((p) => p.trending), [menuProducts]);
+  const trending = useMemo(
+    () => menuProducts.filter((p) => p.trending),
+    [menuProducts],
+  );
 
   return (
     <div className="min-h-[100dvh] pb-28 md:pb-0">
@@ -41,17 +133,22 @@ const Index = () => {
             className="lg:col-span-7 space-y-5"
           >
             <h1 className="font-display text-4xl sm:text-5xl lg:text-6xl font-bold leading-[1.05] tracking-tight">
-              Fresh fast food,<br />
+              Fresh fast food,
+              <br />
               <span className="text-primary">made to order.</span>
             </h1>
             <p className="text-lg text-muted-foreground max-w-lg">
-              Smashed-to-order burgers, wood-fired pizza, hand-cut sides. Crafted by our chefs,
-              ready when you are.
+              Smashed-to-order burgers, wood-fired pizza, hand-cut sides.
+              Crafted by our chefs, ready when you are.
             </p>
             <div className="flex flex-wrap gap-3 pt-1">
               <Button
                 size="lg"
-                onClick={() => document.getElementById("menu")?.scrollIntoView({ behavior: "smooth" })}
+                onClick={() =>
+                  document
+                    .getElementById("menu")
+                    ?.scrollIntoView({ behavior: "smooth" })
+                }
                 className="h-12 px-7 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground font-bold"
               >
                 Order Now <ChevronRight className="ml-1 h-4 w-4" />
@@ -73,8 +170,12 @@ const Index = () => {
               ].map((s, i) => (
                 <div key={i} className="card-surface rounded-xl p-3.5">
                   <s.icon className="h-4 w-4 text-accent mb-1.5" />
-                  <div className="font-display font-bold text-lg">{s.label}</div>
-                  <div className="text-[11px] text-muted-foreground uppercase tracking-wider">{s.sub}</div>
+                  <div className="font-display font-bold text-lg">
+                    {s.label}
+                  </div>
+                  <div className="text-[11px] text-muted-foreground uppercase tracking-wider">
+                    {s.sub}
+                  </div>
                 </div>
               ))}
             </div>
@@ -105,35 +206,23 @@ const Index = () => {
       <section className="container pb-16">
         <div className="mb-6">
           <h2 className="font-display text-2xl font-bold">Browse Categories</h2>
-          <p className="text-muted-foreground text-sm mt-1">Pick your craving.</p>
+          <p className="text-muted-foreground text-sm mt-1">
+            Pick your craving.
+          </p>
         </div>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          {categories.map((c) => (
-            <button
-              key={c.name}
-              onClick={() => {
-                setFilter(c.name);
-                document.getElementById("menu")?.scrollIntoView({ behavior: "smooth" });
-              }}
-              className="group relative aspect-[4/3] overflow-hidden rounded-xl card-surface hover:border-muted-foreground/30 transition-colors"
-            >
-              <img src={c.image} alt={c.name} loading="lazy" className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-              <div className="absolute bottom-0 inset-x-0 p-4 text-left">
-                <div className="text-[10px] uppercase tracking-widest text-accent font-semibold">{c.tagline}</div>
-                <div className="font-display text-lg font-bold mt-0.5">{c.name}</div>
-              </div>
-            </button>
-          ))}
-        </div>
+        <CategoryCarousel categories={categories} setFilter={setFilter} />
       </section>
 
       {/* TRENDING */}
       {trending.length > 0 && (
         <section className="container pb-16">
           <div className="mb-6">
-            <p className="text-xs font-semibold uppercase tracking-wider text-accent">Trending Now</p>
-            <h2 className="font-display text-2xl font-bold mt-1">What everyone's ordering</h2>
+            <p className="text-xs font-semibold uppercase tracking-wider text-accent">
+              Trending Now
+            </p>
+            <h2 className="font-display text-2xl font-bold mt-1">
+              What everyone's ordering
+            </h2>
           </div>
           <div className="flex md:grid md:grid-cols-4 gap-3 overflow-x-auto no-scrollbar -mx-6 px-6 md:mx-0 md:px-0 snap-x snap-mandatory">
             {trending.map((p) => (
@@ -150,7 +239,9 @@ const Index = () => {
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-6">
           <div>
             <h2 className="font-display text-2xl font-bold">The Full Menu</h2>
-            <p className="text-muted-foreground text-sm mt-1">Tap any item to customize.</p>
+            <p className="text-muted-foreground text-sm mt-1">
+              Tap any item to customize.
+            </p>
           </div>
         </div>
 
@@ -163,7 +254,9 @@ const Index = () => {
                 key={f}
                 onClick={() => setFilter(f)}
                 className={`relative shrink-0 rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
-                  isActive ? "text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+                  isActive
+                    ? "text-primary-foreground"
+                    : "text-muted-foreground hover:text-foreground"
                 }`}
               >
                 {isActive && (
@@ -179,7 +272,10 @@ const Index = () => {
           })}
         </div>
 
-        <motion.div layout className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+        <motion.div
+          layout
+          className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3"
+        >
           <AnimatePresence mode="popLayout">
             {filtered.map((p) => (
               <ProductCard key={p.id} product={p} onSelect={setActive} />
@@ -194,45 +290,88 @@ const Index = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
             {/* Brand */}
             <div>
-              <h3 className="font-display text-lg font-bold mb-3">Ahsam Hutt</h3>
+              <h3 className="font-display text-lg font-bold mb-3">Spice</h3>
               <p className="text-sm text-muted-foreground leading-relaxed">
-                Fresh fast food made with quality ingredients. Serving the community since day one.
+                Fresh fast food made with quality ingredients. Serving the
+                community since day one.
               </p>
             </div>
 
             {/* Quick Links */}
             <div>
-              <h4 className="font-display font-semibold text-sm uppercase tracking-wider text-muted-foreground mb-3">Quick Links</h4>
+              <h4 className="font-display font-semibold text-sm uppercase tracking-wider text-muted-foreground mb-3">
+                Quick Links
+              </h4>
               <ul className="space-y-2 text-sm">
-                <li><a href="#menu" className="text-muted-foreground hover:text-foreground transition-colors">Full Menu</a></li>
-                <li><a href="/orders" className="text-muted-foreground hover:text-foreground transition-colors">Track Order</a></li>
-                <li><a href="/profile" className="text-muted-foreground hover:text-foreground transition-colors">My Account</a></li>
+                <li>
+                  <a
+                    href="#menu"
+                    className="text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Full Menu
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="/orders"
+                    className="text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Track Order
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="/profile"
+                    className="text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    My Account
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="/admin/login"
+                    className="text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Admin Portal
+                  </a>
+                </li>
               </ul>
             </div>
 
             {/* Hours */}
             <div>
-              <h4 className="font-display font-semibold text-sm uppercase tracking-wider text-muted-foreground mb-3">Hours</h4>
+              <h4 className="font-display font-semibold text-sm uppercase tracking-wider text-muted-foreground mb-3">
+                Hours
+              </h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li>Mon — Fri: 11am – 11pm</li>
-                <li>Saturday: 10am – 12am</li>
-                <li>Sunday: 10am – 10pm</li>
+                <li>Saturday & Sunday: 11am – 12am</li>
               </ul>
             </div>
 
             {/* Contact */}
             <div>
-              <h4 className="font-display font-semibold text-sm uppercase tracking-wider text-muted-foreground mb-3">Contact</h4>
+              <h4 className="font-display font-semibold text-sm uppercase tracking-wider text-muted-foreground mb-3">
+                Contact
+              </h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
-                <li className="flex items-center gap-2"><Phone className="h-3.5 w-3.5" /> (555) 123-4567</li>
-                <li className="flex items-center gap-2"><Mail className="h-3.5 w-3.5" /> hello@ahsamhutt.com</li>
-                <li className="flex items-center gap-2"><MapPin className="h-3.5 w-3.5" /> 123 Main St, Suite 100</li>
+                <li className="flex items-center gap-2">
+                  <Phone className="h-3.5 w-3.5" />
+                  +923104360887
+                </li>
+                <li className="flex items-center gap-2">
+                  <Mail className="h-3.5 w-3.5" />
+                  spice@gmail.com
+                </li>
+                <li className="flex items-center gap-2">
+                  <MapPin className="h-3.5 w-3.5" /> Main St, Gulberg 3 ,Lahore
+                </li>
               </ul>
             </div>
           </div>
 
           <div className="border-t border-border mt-8 pt-6 text-center text-xs text-muted-foreground">
-            © {new Date().getFullYear()} Ahsam Hutt. All rights reserved.
+            © {new Date().getFullYear()}Spice. All rights reserved.
           </div>
         </div>
       </footer>

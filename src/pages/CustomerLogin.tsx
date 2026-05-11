@@ -1,7 +1,17 @@
 import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { UtensilsCrossed, ArrowRight, Loader2, Mail, Lock as LockIcon, UserPlus } from "lucide-react";
+import {
+  UtensilsCrossed,
+  ArrowRight,
+  Loader2,
+  Mail,
+  Lock as LockIcon,
+  UserPlus,
+  ShoppingBag,
+  Receipt,
+  Star,
+} from "lucide-react";
 import { CustomerHeader } from "@/components/site/CustomerHeader";
 import { CustomerMobileNav } from "@/components/site/CustomerMobileNav";
 import { Button } from "@/components/ui/button";
@@ -22,19 +32,28 @@ const CustomerLogin = () => {
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    if (user && !loading) navigate("/", { replace: true });
+    if (user && !loading) navigate("/profile", { replace: true });
   }, [user, loading, navigate]);
 
-  if (loading) return null;
+  if (loading) {
+    return (
+      <div className="min-h-[100dvh] flex items-center justify-center">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
   if (user) return null;
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setBusy(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
     setBusy(false);
     if (error) return toast.error(error.message);
-    toast.success("Welcome back!");
+    toast.success("Welcome back! Redirecting to your profile…");
   };
 
   const handleSignUp = async (e: React.FormEvent) => {
@@ -44,13 +63,13 @@ const CustomerLogin = () => {
       email,
       password,
       options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
+        emailRedirectTo: `${window.location.origin}/profile`,
         data: { display_name: displayName || email.split("@")[0] },
       },
     });
     setBusy(false);
     if (error) return toast.error(error.message);
-    toast.success("Account created! You're signed in.");
+    toast.success("Account created! Welcome aboard.");
   };
 
   return (
@@ -65,12 +84,50 @@ const CustomerLogin = () => {
           <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary mb-5">
             <UtensilsCrossed className="h-5 w-5 text-primary-foreground" />
           </div>
-          <h1 className="font-display text-2xl font-bold">Welcome to Ahsam Hutt</h1>
+          <h1 className="font-display text-2xl font-bold">
+            Welcome to Spice
+          </h1>
           <p className="text-muted-foreground mt-1 text-sm">
-            Sign in to track your orders and checkout faster.
+            Sign in to unlock your personal dashboard with order tracking,
+            profile management, and faster checkout.
           </p>
 
-          <Tabs value={mode} onValueChange={(v) => setMode(v as "signin" | "signup")} className="mt-6">
+          {/* Benefits banner */}
+          <div className="mt-4 rounded-xl border border-accent/30 bg-accent/5 p-4">
+            <p className="text-xs font-semibold text-accent uppercase tracking-wider mb-2">
+              Member Benefits
+            </p>
+            <div className="grid grid-cols-1 gap-2">
+              {[
+                {
+                  icon: Receipt,
+                  text: "Track your orders in real-time",
+                },
+                {
+                  icon: ShoppingBag,
+                  text: "Faster checkout with saved details",
+                },
+                {
+                  icon: Star,
+                  text: "Personal profile & order history",
+                },
+              ].map((b, i) => (
+                <div
+                  key={i}
+                  className="flex items-center gap-2 text-xs text-muted-foreground"
+                >
+                  <b.icon className="h-3.5 w-3.5 text-accent shrink-0" />
+                  {b.text}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <Tabs
+            value={mode}
+            onValueChange={(v) => setMode(v as "signin" | "signup")}
+            className="mt-6"
+          >
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="signin">Sign In</TabsTrigger>
               <TabsTrigger value="signup">Create Account</TabsTrigger>

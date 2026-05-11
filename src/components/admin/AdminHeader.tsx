@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { LogOut, UtensilsCrossed, Shield } from "lucide-react";
 import { useAuth } from "@/stores/auth";
 import { Button } from "@/components/ui/button";
@@ -6,10 +6,12 @@ import { toast } from "sonner";
 
 export function AdminHeader() {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
 
   const handleLogout = async () => {
     await logout();
     toast.success("Signed out");
+    navigate("/admin/login", { replace: true });
   };
 
   return (
@@ -17,9 +19,7 @@ export function AdminHeader() {
       <div className="header-backdrop">
         <div className="container flex h-16 items-center justify-between gap-4">
           <Link to="/admin" className="flex items-center gap-2.5 group">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
-              <UtensilsCrossed className="h-4.5 w-4.5 text-primary-foreground" />
-            </div>
+            <img src="/favicon.png" alt="Logo" className="h-9 w-9 rounded-lg" />
             <div className="flex items-center gap-2">
               <span className="font-display text-lg font-bold tracking-tight">
                 Spice
