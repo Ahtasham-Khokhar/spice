@@ -42,6 +42,6 @@ export const useMenuStore = create<MenuState>()(
 
 
     }),
-    { name: "ahsam-menu-v1" }
+    { name: "ahsam-menu-v2" }
   )
 );

@@ -32,14 +32,28 @@ export const useAuth = create<AuthState>((set, get) => ({
         return;
       }
       try {
-        const { data } = await supabase
+        // Primary: use the has_role() database function (bypasses RLS issues)
+        const { data: hasRole, error: rpcError } = await supabase
+          .rpc("has_role", { _role: "admin", _user_id: userId });
+
+        if (!rpcError) {
+          set({ isAdmin: !!hasRole, adminChecked: true });
+          return;
+        }
+
+        // Fallback: direct table query
+        console.warn("has_role RPC failed, falling back to table query:", rpcError.message);
+        const { data, error } = await supabase
           .from("user_roles")
           .select("role")
           .eq("user_id", userId)
           .eq("role", "admin")
           .maybeSingle();
+
+        if (error) console.error("Admin role check failed:", error.message);
         set({ isAdmin: !!data, adminChecked: true });
-      } catch {
+      } catch (err) {
+        console.error("Admin role check exception:", err);
         set({ isAdmin: false, adminChecked: true });
       }
     };
