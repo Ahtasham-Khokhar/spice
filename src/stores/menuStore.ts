@@ -10,7 +10,7 @@ type MenuState = {
   updateProduct: (id: string, updates: Partial<MenuProduct>) => void;
   deleteProduct: (id: string) => void;
   getByCategory: (cat: Category | "All") => MenuProduct[];
-  getTrending: () => MenuProduct[];
+
 };
 
 export const useMenuStore = create<MenuState>()(
@@ -40,7 +40,7 @@ export const useMenuStore = create<MenuState>()(
         return get().products.filter((p) => p.category === cat);
       },
 
-      getTrending: () => get().products.filter((p) => p.trending),
+
     }),
     { name: "ahsam-menu-v1" }
   )

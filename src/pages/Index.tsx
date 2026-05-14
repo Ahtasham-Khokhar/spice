@@ -132,10 +132,7 @@ const Index = () => {
         : menuProducts.filter((p) => p.category === filter),
     [filter, menuProducts],
   );
-  const trending = useMemo(
-    () => menuProducts.filter((p) => p.trending),
-    [menuProducts],
-  );
+
 
   return (
     <div className="min-h-[100dvh] pb-28 md:pb-0">
@@ -246,26 +243,7 @@ const Index = () => {
         )}
       </section>
 
-      {/* TRENDING */}
-      {trending.length > 0 && (
-        <section className="container pb-16">
-          <div className="mb-6">
-            <p className="text-xs font-semibold uppercase tracking-wider text-accent">
-              Trending Now
-            </p>
-            <h2 className="font-display text-2xl font-bold mt-1">
-              What everyone's ordering
-            </h2>
-          </div>
-          <div className="flex md:grid md:grid-cols-4 gap-3 overflow-x-auto no-scrollbar -mx-6 px-6 md:mx-0 md:px-0 snap-x snap-mandatory">
-            {trending.map((p) => (
-              <div key={p.id} className="min-w-[200px] sm:min-w-[240px] md:min-w-0 snap-start">
-                <ProductCard product={p} onSelect={setActive} />
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
+
 
       {/* MENU */}
       <section id="menu" className="container pb-20 scroll-mt-20">

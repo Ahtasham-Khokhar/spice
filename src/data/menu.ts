@@ -37,7 +37,6 @@ export type Product = {
   category: Category;
   rating: number;
   reviews: number;
-  trending?: boolean;
   modifiers?: ModifierGroup[];
 };
 
@@ -108,7 +107,6 @@ export const products: Product[] = [
     category: "Burgers",
     rating: 4.9,
     reviews: 1284,
-    trending: true,
     modifiers: standardMods,
   },
   {
@@ -120,7 +118,6 @@ export const products: Product[] = [
     category: "Pizza",
     rating: 4.8,
     reviews: 932,
-    trending: true,
     modifiers: standardMods,
   },
   {
@@ -132,7 +129,6 @@ export const products: Product[] = [
     category: "Pasta",
     rating: 4.9,
     reviews: 671,
-    trending: true,
     modifiers: [standardMods[0], standardMods[1]],
   },
   {
@@ -155,7 +151,6 @@ export const products: Product[] = [
     category: "Chicken",  
     rating: 4.8,
     reviews: 1102,
-    trending: true,
     modifiers: [standardMods[0]],
   },
   {
@@ -189,7 +184,6 @@ export const products: Product[] = [
     category: "Drinks",
     rating: 4.9,
     reviews: 829,
-    trending: true,
     modifiers: [standardMods[0]],
   },
    {
@@ -201,7 +195,6 @@ export const products: Product[] = [
     category: "Ice Cream",
     rating: 4.9,
     reviews: 829,
-    trending: true,
     modifiers: [standardMods[0]],
   },
 ];

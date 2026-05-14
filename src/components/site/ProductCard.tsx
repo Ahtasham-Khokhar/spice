@@ -33,11 +33,7 @@ export const ProductCard = forwardRef<HTMLButtonElement, Props>(
           className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-        {product.trending && (
-          <div className="absolute top-3 left-3 rounded-md bg-accent px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-accent-foreground">
-            Trending
-          </div>
-        )}
+
         {isOut && (
           <div className="absolute inset-0 flex items-center justify-center bg-background/70 backdrop-blur-sm">
             <span className="flex items-center gap-1.5 rounded-md bg-destructive/90 px-3 py-1.5 text-xs font-bold text-destructive-foreground">
