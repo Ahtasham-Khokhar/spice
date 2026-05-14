@@ -1,8 +1,9 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import {Package, Trophy, Activity,
-  Plus, Pencil, Trash2, Save, X, ImageIcon,LucideProps
+import {
+  Package, Trophy, Activity,
+  Plus, Pencil, Trash2, Save, X, ImageIcon, Upload, Layers, LucideProps
 } from "lucide-react";
 import { AdminHeader } from "@/components/admin/AdminHeader";
 import { Button } from "@/components/ui/button";
@@ -15,7 +16,7 @@ import { useAuth } from "@/stores/auth";
 import { useOrders, ORDER_STATUSES, type OrderStatus } from "@/stores/orders";
 import { useStock } from "@/stores/stock";
 import { useMenuStore, type MenuProduct } from "@/stores/menuStore";
-import { categories } from "@/data/menu";
+import { useCategoryStore, type CategoryItem } from "@/stores/categoryStore";
 import { formatMoney, formatTime } from "@/lib/format";
 import { toast } from "sonner";
 
@@ -70,6 +71,94 @@ const Admin = () => {
   const updateProduct = useMenuStore((s) => s.updateProduct);
   const deleteProduct = useMenuStore((s) => s.deleteProduct);
 
+  // --- Category state ---
+  const categories = useCategoryStore((s) => s.categories);
+  const catLoading = useCategoryStore((s) => s.loading);
+  const fetchCategories = useCategoryStore((s) => s.fetchCategories);
+  const addCategory = useCategoryStore((s) => s.addCategory);
+  const updateCat = useCategoryStore((s) => s.updateCategory);
+  const deleteCat = useCategoryStore((s) => s.deleteCategory);
+
+  type EditableCat = { id: string; name: string; tagline: string };
+  const [editingCat, setEditingCat] = useState<EditableCat | null>(null);
+  const [isNewCat, setIsNewCat] = useState(false);
+  const [catImageFile, setCatImageFile] = useState<File | null>(null);
+  const [catImageUrl, setCatImageUrl] = useState("");
+  const [catImagePreview, setCatImagePreview] = useState<string | null>(null);
+  const [catSaving, setCatSaving] = useState(false);
+  const catFileRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => { fetchCategories(); }, [fetchCategories]);
+
+  const handleCatImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setCatImageFile(file);
+    setCatImagePreview(URL.createObjectURL(file));
+  };
+
+  const startNewCat = () => {
+    setEditingCat({ id: "", name: "", tagline: "" });
+    setIsNewCat(true);
+    setCatImageFile(null);
+    setCatImageUrl("");
+    setCatImagePreview(null);
+  };
+
+  const startEditCat = (c: CategoryItem) => {
+    setEditingCat({ id: c.id, name: c.name, tagline: c.tagline });
+    setIsNewCat(false);
+    setCatImageFile(null);
+    setCatImageUrl(c.image_url || "");
+    setCatImagePreview(c.image_url || null);
+  };
+
+  const saveCat = async () => {
+    if (!editingCat || !editingCat.name.trim()) {
+      toast.error("Category name is required.");
+      return;
+    }
+    setCatSaving(true);
+    try {
+      // Use file upload if provided, otherwise use the pasted URL
+      const urlToSave = catImageFile ? undefined : (catImageUrl.trim() || undefined);
+      if (isNewCat) {
+        await addCategory(
+          { name: editingCat.name, tagline: editingCat.tagline },
+          catImageFile ?? undefined,
+          urlToSave
+        );
+        toast.success(`"${editingCat.name}" category added`);
+      } else {
+        await updateCat(
+          editingCat.id,
+          { name: editingCat.name, tagline: editingCat.tagline },
+          catImageFile ?? undefined,
+          urlToSave
+        );
+        toast.success(`"${editingCat.name}" updated`);
+      }
+      setEditingCat(null);
+      setCatImageFile(null);
+      setCatImageUrl("");
+      setCatImagePreview(null);
+    } catch (err: any) {
+      toast.error(err?.message ?? "Failed to save category");
+    } finally {
+      setCatSaving(false);
+    }
+  };
+
+  const handleDeleteCat = async (c: CategoryItem) => {
+    try {
+      await deleteCat(c.id);
+      toast.success(`"${c.name}" deleted`);
+    } catch (err: any) {
+      toast.error(err?.message ?? "Failed to delete category");
+    }
+  };
+
+  // --- Menu item state ---
   const [editing, setEditing] = useState<EditableProduct | null>(null);
   const [isNewItem, setIsNewItem] = useState(false);
 
@@ -194,9 +283,10 @@ const Admin = () => {
 
         {/* Tabs: Orders / Menu / Inventory */}
         <Tabs defaultValue="orders" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3 max-w-md">
+          <TabsList className="grid w-full grid-cols-4 max-w-lg">
             <TabsTrigger value="orders">Orders</TabsTrigger>
             <TabsTrigger value="menu">Menu</TabsTrigger>
+            <TabsTrigger value="categories">Categories</TabsTrigger>
             <TabsTrigger value="inventory">Inventory</TabsTrigger>
           </TabsList>
 
@@ -434,6 +524,206 @@ const Admin = () => {
                   </div>
                 ))}
               </div>
+            </section>
+          </TabsContent>
+
+          {/* CATEGORIES TAB */}
+          <TabsContent value="categories">
+            <section className="card-surface rounded-xl p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="font-display text-lg font-bold">
+                  <Layers className="inline mr-2 h-5 w-5 text-accent" />
+                  Manage Categories
+                </h2>
+                <Button
+                  onClick={startNewCat}
+                  size="sm"
+                  className="rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
+                >
+                  <Plus className="mr-1 h-4 w-4" /> Add Category
+                </Button>
+              </div>
+
+              {/* Edit / Add Category Form */}
+              <AnimatePresence>
+                {editingCat && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="overflow-hidden"
+                  >
+                    <div className="rounded-xl border border-primary/30 bg-primary/5 p-5 mb-4 space-y-4">
+                      <div className="flex items-center justify-between">
+                        <h3 className="font-display font-bold">
+                          {isNewCat ? "Add New Category" : "Edit Category"}
+                        </h3>
+                        <button
+                          onClick={() => { setEditingCat(null); setCatImageFile(null); setCatImagePreview(null); }}
+                          className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-muted transition-colors"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+                      <div className="grid sm:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label>Name</Label>
+                          <Input
+                            value={editingCat.name}
+                            onChange={(e) => setEditingCat({ ...editingCat, name: e.target.value })}
+                            placeholder="e.g. Burgers"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Tagline</Label>
+                          <Input
+                            value={editingCat.tagline}
+                            onChange={(e) => setEditingCat({ ...editingCat, tagline: e.target.value })}
+                            placeholder="Stacked & sizzling"
+                          />
+                        </div>
+                      </div>
+                      {/* Image — URL or Upload */}
+                      <div className="space-y-3">
+                        <Label>Category Image</Label>
+                        <div className="flex items-start gap-4">
+                          {/* Preview */}
+                          {catImagePreview ? (
+                            <img
+                              src={catImagePreview}
+                              alt="Preview"
+                              className="h-20 w-28 rounded-xl object-cover border border-border shrink-0"
+                            />
+                          ) : (
+                            <div className="h-20 w-28 rounded-xl bg-muted/50 border border-dashed border-border flex items-center justify-center shrink-0">
+                              <ImageIcon className="h-6 w-6 text-muted-foreground/40" />
+                            </div>
+                          )}
+
+                          <div className="flex-1 space-y-3">
+                            {/* Option 1: Paste URL */}
+                            <div className="space-y-1">
+                              <div className="relative">
+                                <ImageIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                <Input
+                                  value={catImageUrl}
+                                  onChange={(e) => {
+                                    setCatImageUrl(e.target.value);
+                                    if (e.target.value.trim()) {
+                                      setCatImagePreview(e.target.value.trim());
+                                      setCatImageFile(null);
+                                    } else if (!catImageFile) {
+                                      setCatImagePreview(null);
+                                    }
+                                  }}
+                                  className="pl-10"
+                                  placeholder="Paste image URL (https://…)"
+                                />
+                              </div>
+                            </div>
+
+                            {/* Divider */}
+                            <div className="flex items-center gap-2">
+                              <div className="flex-1 border-t border-border" />
+                              <span className="text-[11px] text-muted-foreground uppercase tracking-wider">or</span>
+                              <div className="flex-1 border-t border-border" />
+                            </div>
+
+                            {/* Option 2: Upload file */}
+                            <div>
+                              <input
+                                ref={catFileRef}
+                                type="file"
+                                accept="image/jpeg,image/png,image/webp,image/avif,image/gif"
+                                className="hidden"
+                                onChange={handleCatImageChange}
+                              />
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => catFileRef.current?.click()}
+                                className="rounded-lg"
+                              >
+                                <Upload className="mr-1.5 h-3.5 w-3.5" />
+                                {catImageFile ? "Change File" : "Upload from device"}
+                              </Button>
+                              {catImageFile && (
+                                <p className="text-[11px] text-accent mt-1">{catImageFile.name}</p>
+                              )}
+                              <p className="text-[11px] text-muted-foreground mt-0.5">JPG, PNG, WebP — max 5 MB</p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <Button
+                        onClick={saveCat}
+                        disabled={catSaving}
+                        className="rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground font-bold"
+                      >
+                        <Save className="mr-2 h-4 w-4" />
+                        {catSaving ? "Saving…" : isNewCat ? "Add Category" : "Save Changes"}
+                      </Button>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* Categories list */}
+              {catLoading ? (
+                <div className="space-y-2">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="h-16 rounded-xl bg-muted/30 animate-pulse" />
+                  ))}
+                </div>
+              ) : categories.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground text-sm">
+                  No categories yet — click "Add Category" above.
+                </div>
+              ) : (
+                <div className="space-y-2 max-h-[600px] overflow-y-auto pr-1">
+                  {categories.map((c) => (
+                    <div
+                      key={c.id}
+                      className="flex items-center gap-3 rounded-xl border border-border bg-muted/30 p-3"
+                    >
+                      {c.image_url ? (
+                        <img
+                          src={c.image_url}
+                          alt={c.name}
+                          className="h-14 w-20 rounded-lg object-cover shrink-0"
+                        />
+                      ) : (
+                        <div className="h-14 w-20 rounded-lg bg-muted/50 flex items-center justify-center shrink-0">
+                          <ImageIcon className="h-5 w-5 text-muted-foreground/40" />
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <div className="font-semibold text-sm truncate">
+                          {c.name}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {c.tagline || "No tagline"}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => startEditCat(c)}
+                          className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteCat(c)}
+                          className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-destructive/10 transition-colors text-muted-foreground hover:text-destructive"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </section>
           </TabsContent>
 

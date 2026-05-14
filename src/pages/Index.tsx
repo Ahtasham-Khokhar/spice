@@ -1,4 +1,4 @@
-import { useMemo, useState, useCallback } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import useEmblaCarousel from "embla-carousel-react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -10,29 +10,35 @@ import {
   Phone,
   Mail,
   MapPin,
+  ImageOff,
 } from "lucide-react";
 import { CustomerHeader } from "@/components/site/CustomerHeader";
 import { CustomerMobileNav } from "@/components/site/CustomerMobileNav";
 import { CartSidebar } from "@/components/site/CartSidebar";
 import { ProductCard } from "@/components/site/ProductCard";
 import { ProductModal } from "@/components/site/ProductModal";
-import { categories, type Category, type Product } from "@/data/menu";
+import { type Product } from "@/data/menu";
 import { useMenuStore } from "@/stores/menuStore";
+import { useCategoryStore, type CategoryItem } from "@/stores/categoryStore";
 import { Button } from "@/components/ui/button";
 import heroImg from "@/assets/hero-burger.jpg";
 import { useCart } from "@/stores/cart";
 
-type Filter = "All" | Category;
+type Filter = "All" | string;
 
-export const CategoryCarousel = ({ categories, setFilter }) => {
-  // 1. Initialize Embla with loop enabled
+export const CategoryCarousel = ({
+  categories,
+  setFilter,
+}: {
+  categories: CategoryItem[];
+  setFilter: (f: string) => void;
+}) => {
   const [emblaRef, emblaApi] = useEmblaCarousel({
     loop: true,
     align: "start",
     slidesToScroll: 1,
   });
 
-  // 2. Navigation Logic
   const scrollPrev = useCallback(
     () => emblaApi && emblaApi.scrollPrev(),
     [emblaApi],
@@ -44,7 +50,6 @@ export const CategoryCarousel = ({ categories, setFilter }) => {
 
   return (
     <div className="relative group">
-      {/* Navigation Buttons - Only visible on hover for a clean look */}
       <button
         onClick={scrollPrev}
         className="absolute left-[-20px] top-1/2 -translate-y-1/2 z-10 bg-background/80 backdrop-blur-sm p-2 rounded-full border shadow-lg opacity-0 group-hover:opacity-100 transition-opacity hidden lg:block"
@@ -52,7 +57,6 @@ export const CategoryCarousel = ({ categories, setFilter }) => {
         <ChevronLeft className="w-5 h-5" />
       </button>
 
-      {/* The Viewport */}
       <div
         className="overflow-hidden cursor-grab active:cursor-grabbing"
         ref={emblaRef}
@@ -60,22 +64,27 @@ export const CategoryCarousel = ({ categories, setFilter }) => {
         <div className="flex gap-4">
           {categories.map((c, index) => (
             <button
-              key={`${c.name}-${index}`}
+              key={`${c.id}-${index}`}
               onClick={() => {
                 setFilter(c.name);
                 document
                   .getElementById("menu")
                   ?.scrollIntoView({ behavior: "smooth" });
               }}
-              // This flex-basis ensures we see ~4 items on large screens and ~2 on mobile
               className="flex-[0_0_70%] sm:flex-[0_0_45%] lg:flex-[0_0_24%] min-w-0 relative aspect-[4/3] overflow-hidden rounded-3xl card-surface hover:border-accent/50 transition-all active:scale-95"
             >
-              <img
-                src={c.image}
-                alt={c.name}
-                loading="lazy"
-                className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 hover:scale-110"
-              />
+              {c.image_url ? (
+                <img
+                  src={c.image_url}
+                  alt={c.name}
+                  loading="lazy"
+                  className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 hover:scale-110"
+                />
+              ) : (
+                <div className="absolute inset-0 h-full w-full bg-muted/50 flex items-center justify-center">
+                  <ImageOff className="h-10 w-10 text-muted-foreground/40" />
+                </div>
+              )}
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
               <div className="absolute bottom-0 inset-x-0 p-5 text-left">
                 <div className="text-[10px] uppercase tracking-widest text-accent font-bold drop-shadow-md">
@@ -106,6 +115,15 @@ const Index = () => {
   const setCartOpen = useCart((s) => s.setOpen);
 
   const menuProducts = useMenuStore((s) => s.products);
+
+  // Dynamic categories from Supabase
+  const categories = useCategoryStore((s) => s.categories);
+  const categoriesLoading = useCategoryStore((s) => s.loading);
+  const fetchCategories = useCategoryStore((s) => s.fetchCategories);
+
+  useEffect(() => {
+    fetchCategories();
+  }, [fetchCategories]);
 
   const filtered = useMemo(
     () =>
@@ -210,7 +228,22 @@ const Index = () => {
             Pick your craving.
           </p>
         </div>
-        <CategoryCarousel categories={categories} setFilter={setFilter} />
+        {categoriesLoading ? (
+          <div className="flex gap-4">
+            {[1, 2, 3, 4].map((i) => (
+              <div
+                key={i}
+                className="flex-[0_0_70%] sm:flex-[0_0_45%] lg:flex-[0_0_24%] aspect-[4/3] rounded-3xl bg-muted/50 animate-pulse"
+              />
+            ))}
+          </div>
+        ) : categories.length > 0 ? (
+          <CategoryCarousel categories={categories} setFilter={setFilter} />
+        ) : (
+          <div className="text-center py-12 text-muted-foreground text-sm">
+            No categories yet — add some from the admin dashboard.
+          </div>
+        )}
       </section>
 
       {/* TRENDING */}
