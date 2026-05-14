@@ -203,7 +203,7 @@ const Index = () => {
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.5, delay: 0.1 }}
-            className="lg:col-span-5"
+            className="hidden sm:block lg:col-span-5"
           >
             <div className="relative max-w-[480px] mx-auto">
               <div className="overflow-hidden rounded-2xl shadow-elevated">
@@ -229,8 +229,8 @@ const Index = () => {
           </p>
         </div>
         {categoriesLoading ? (
-          <div className="flex gap-4">
-            {[1, 2, 3, 4].map((i) => (
+          <div className="flex gap-4 overflow-hidden">
+            {[1, 2].map((i) => (
               <div
                 key={i}
                 className="flex-[0_0_70%] sm:flex-[0_0_45%] lg:flex-[0_0_24%] aspect-[4/3] rounded-3xl bg-muted/50 animate-pulse"
@@ -259,7 +259,7 @@ const Index = () => {
           </div>
           <div className="flex md:grid md:grid-cols-4 gap-3 overflow-x-auto no-scrollbar -mx-6 px-6 md:mx-0 md:px-0 snap-x snap-mandatory">
             {trending.map((p) => (
-              <div key={p.id} className="min-w-[240px] md:min-w-0 snap-start">
+              <div key={p.id} className="min-w-[200px] sm:min-w-[240px] md:min-w-0 snap-start">
                 <ProductCard product={p} onSelect={setActive} />
               </div>
             ))}
