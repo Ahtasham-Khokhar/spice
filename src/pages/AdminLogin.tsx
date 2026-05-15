@@ -61,8 +61,8 @@ const AdminLogin = () => {
           animate={{ opacity: 1, y: 0 }}
           className="card-surface rounded-2xl p-8 shadow-elevated"
         >
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary mb-4">
-            <Shield className="h-5 w-5 text-primary-foreground" />
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl">
+            <img src="/favicon.png" className="rounded-md h-full w-full" alt="" />
           </div>
           <h1 className="font-display text-2xl font-bold">Admin Portal</h1>
           <p className="text-muted-foreground mt-1 text-sm">
