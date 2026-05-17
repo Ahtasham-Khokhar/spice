@@ -67,6 +67,8 @@ const Admin = () => {
   const toggleStock = useStock((s) => s.toggle);
 
   const menuProducts = useMenuStore((s) => s.products);
+  const menuLoading = useMenuStore((s) => s.loading);
+  const fetchProducts = useMenuStore((s) => s.fetchProducts);
   const addProduct = useMenuStore((s) => s.addProduct);
   const updateProduct = useMenuStore((s) => s.updateProduct);
   const deleteProduct = useMenuStore((s) => s.deleteProduct);
@@ -89,6 +91,7 @@ const Admin = () => {
   const catFileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => { fetchCategories(); }, [fetchCategories]);
+  useEffect(() => { fetchProducts(); }, [fetchProducts]);
 
   const handleCatImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -142,8 +145,8 @@ const Admin = () => {
       setCatImageFile(null);
       setCatImageUrl("");
       setCatImagePreview(null);
-    } catch (err: any) {
-      toast.error(err?.message ?? "Failed to save category");
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Failed to save category");
     } finally {
       setCatSaving(false);
     }
@@ -153,14 +156,15 @@ const Admin = () => {
     try {
       await deleteCat(c.id);
       toast.success(`"${c.name}" deleted`);
-    } catch (err: any) {
-      toast.error(err?.message ?? "Failed to delete category");
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Failed to delete category");
     }
   };
 
   // --- Menu item state ---
   const [editing, setEditing] = useState<EditableProduct | null>(null);
   const [isNewItem, setIsNewItem] = useState(false);
+  const [menuSaving, setMenuSaving] = useState(false);
 
   const stats = useMemo(() => {
     const revenue = orders.reduce((s, o) => s + o.total, 0);
@@ -206,40 +210,52 @@ const Admin = () => {
     setIsNewItem(true);
   };
 
-  const saveItem = () => {
+
+  const saveItem = async () => {
     if (!editing) return;
     const price = parseFloat(editing.price);
     if (!editing.name || isNaN(price) || price <= 0) {
       toast.error("Please fill in name and a valid price.");
       return;
     }
-    if (isNewItem) {
-      addProduct({
-        name: editing.name,
-        description: editing.description,
-        price,
-        image: editing.image || "/placeholder.svg",
-        category: editing.category as MenuProduct["category"],
-        rating: 4.5,
-        reviews: 0,
-      });
-      toast.success(`"${editing.name}" added to menu`);
-    } else {
-      updateProduct(editing.id, {
-        name: editing.name,
-        description: editing.description,
-        price,
-        image: editing.image,
-        category: editing.category as MenuProduct["category"],
-      });
-      toast.success(`"${editing.name}" updated`);
+    setMenuSaving(true);
+    try {
+      if (isNewItem) {
+        await addProduct({
+          name: editing.name,
+          description: editing.description,
+          price,
+          image: editing.image || "/placeholder.svg",
+          category: editing.category as MenuProduct["category"],
+          rating: 4.5,
+          reviews: 0,
+        });
+        toast.success(`"${editing.name}" added to menu`);
+      } else {
+        await updateProduct(editing.id, {
+          name: editing.name,
+          description: editing.description,
+          price,
+          image: editing.image,
+          category: editing.category as MenuProduct["category"],
+        });
+        toast.success(`"${editing.name}" updated`);
+      }
+      setEditing(null);
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Failed to save menu item");
+    } finally {
+      setMenuSaving(false);
     }
-    setEditing(null);
   };
 
-  const handleDelete = (p: MenuProduct) => {
-    deleteProduct(p.id);
-    toast.success(`"${p.name}" removed from menu`);
+  const handleDelete = async (p: MenuProduct) => {
+    try {
+      await deleteProduct(p.id);
+      toast.success(`"${p.name}" removed from menu`);
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Failed to delete menu item");
+    }
   };
 
   return (
@@ -477,10 +493,11 @@ const Admin = () => {
                       </div>
                       <Button
                         onClick={saveItem}
+                        disabled={menuSaving}
                         className="rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground font-bold"
                       >
                         <Save className="mr-2 h-4 w-4" />
-                        {isNewItem ? "Add to Menu" : "Save Changes"}
+                        {menuSaving ? "Saving…" : isNewItem ? "Add to Menu" : "Save Changes"}
                       </Button>
                     </div>
                   </motion.div>
@@ -488,42 +505,54 @@ const Admin = () => {
               </AnimatePresence>
 
               {/* Menu items list */}
-              <div className="space-y-2 max-h-[600px] overflow-y-auto pr-1">
-                {menuProducts.map((p) => (
-                  <div
-                    key={p.id}
-                    className="flex items-center gap-3 rounded-xl border border-border bg-muted/30 p-3"
-                  >
-                    <img
-                      src={p.image}
-                      alt={p.name}
-                      className="h-14 w-14 rounded-lg object-cover shrink-0"
-                    />
-                    <div className="flex-1 min-w-0">
-                      <div className="font-semibold text-sm truncate">
-                        {p.name}
+              {menuLoading ? (
+                <div className="space-y-2">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="h-16 rounded-xl bg-muted/30 animate-pulse" />
+                  ))}
+                </div>
+              ) : menuProducts.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground text-sm">
+                  No menu items yet — click "Add Item" above.
+                </div>
+              ) : (
+                <div className="space-y-2 max-h-[600px] overflow-y-auto pr-1">
+                  {menuProducts.map((p) => (
+                    <div
+                      key={p.id}
+                      className="flex items-center gap-3 rounded-xl border border-border bg-muted/30 p-3"
+                    >
+                      <img
+                        src={p.image}
+                        alt={p.name}
+                        className="h-14 w-14 rounded-lg object-cover shrink-0"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="font-semibold text-sm truncate">
+                          {p.name}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {p.category} · {formatMoney(p.price)}
+                        </div>
                       </div>
-                      <div className="text-xs text-muted-foreground">
-                        {p.category} · {formatMoney(p.price)}
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => startEdit(p)}
+                          className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(p)}
+                          className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-destructive/10 transition-colors text-muted-foreground hover:text-destructive"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
                       </div>
                     </div>
-                    <div className="flex items-center gap-1">
-                      <button
-                        onClick={() => startEdit(p)}
-                        className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
-                      >
-                        <Pencil className="h-3.5 w-3.5" />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(p)}
-                        className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-destructive/10 transition-colors text-muted-foreground hover:text-destructive"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </section>
           </TabsContent>
 

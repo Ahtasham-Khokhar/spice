@@ -44,6 +44,45 @@ export type Database = {
         }
         Relationships: []
       }
+      menu_items: {
+        Row: {
+          id: string
+          name: string
+          description: string
+          price: number
+          image: string
+          category: string
+          rating: number
+          reviews: number
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          description?: string
+          price: number
+          image?: string
+          category: string
+          rating?: number
+          reviews?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          description?: string
+          price?: number
+          image?: string
+          category?: string
+          rating?: number
+          reviews?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null

@@ -115,6 +115,8 @@ const Index = () => {
   const setCartOpen = useCart((s) => s.setOpen);
 
   const menuProducts = useMenuStore((s) => s.products);
+  const menuLoading = useMenuStore((s) => s.loading);
+  const fetchProducts = useMenuStore((s) => s.fetchProducts);
 
   // Dynamic categories from Supabase
   const categories = useCategoryStore((s) => s.categories);
@@ -124,6 +126,10 @@ const Index = () => {
   useEffect(() => {
     fetchCategories();
   }, [fetchCategories]);
+
+  useEffect(() => {
+    fetchProducts();
+  }, [fetchProducts]);
 
   const filtered = useMemo(
     () =>
@@ -250,9 +256,6 @@ const Index = () => {
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-6">
           <div>
             <h2 className="font-display text-2xl font-bold">The Full Menu</h2>
-            <p className="text-muted-foreground text-sm mt-1">
-              Tap any item to customize.
-            </p>
           </div>
         </div>
 
@@ -288,9 +291,19 @@ const Index = () => {
           className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3"
         >
           <AnimatePresence mode="popLayout">
-            {filtered.map((p) => (
-              <ProductCard key={p.id} product={p} onSelect={setActive} />
-            ))}
+            {menuLoading ? (
+              Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="aspect-[3/4] rounded-2xl bg-muted/50 animate-pulse" />
+              ))
+            ) : filtered.length === 0 ? (
+              <div className="col-span-full text-center py-16 text-muted-foreground text-sm">
+                No menu items available yet.
+              </div>
+            ) : (
+              filtered.map((p) => (
+                <ProductCard key={p.id} product={p} onSelect={setActive} />
+              ))
+            )}
           </AnimatePresence>
         </motion.div>
       </section>
